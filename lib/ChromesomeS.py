@@ -17,7 +17,7 @@ from lib.SingleNode import SingleLinkList, SingleReaction
 
 class ChromesomeS(object):
     def __init__(self, S, P, abundant, POOLFILE, translator_file,
-                 G=50, NP=10, Pc=0.8, Pm=0.1) -> None:
+                 G=10, NP=5, Pc=0.8, Pm=0.1) -> None:
 
         self.S = S
         self.P = P
@@ -245,9 +245,15 @@ class ChromesomeS(object):
 
         fitness = []
 
-        for i in range(len(chromesomes)):
+        if type(chromesomes).__name__=='list':
 
-            fitness.append(self.get_fitness(chromesomes[i]))
+            for i in range(len(chromesomes)):
+
+                fitness.append(self.get_fitness(chromesomes[i]))
+        
+        else:
+
+            fitness.append(self.get_fitness(chromesomes))
 
         return fitness
 
@@ -298,13 +304,22 @@ class ChromesomeS(object):
 
                 print('-----Crossover-----')
                 
-                crossA, crossB = self.Crossover(pop)
+                try:
 
-                crossfit = self.Fit([crossA, crossB])
+                    crossA, crossB = self.Crossover(pop)
+                    cross_fit = self.Fit([crossA, crossB])
 
-                pop.append(crossA)
-                pop.append(crossB)
-                fitness = fitness + crossfit
+                    pop.append(crossA)
+                    pop.append(crossB)
+                    fitness = fitness + cross_fit
+
+                except:
+
+                    cross_pop = self.init_chromesomes(NP=2)
+                    cross_fit = self.Fit(cross_pop)
+
+                    pop.append(cross_pop)
+                    fitness = fitness + cross_fit
 
 
             # Mutation
@@ -313,12 +328,20 @@ class ChromesomeS(object):
             if m < self.Pm:
                 print('-----Mutation-----')
 
-                mutA = self.Mutation(pop)
+                try:
 
-                mutfit = self.Fit(mutA)
+                    mutA = self.Mutation(pop)
+                    mut_fit = self.Fit(mutA)
 
-                pop.append(mutA)
-                fitness = fitness + mutfit
+                    pop.append(mutA)
+                    fitness = fitness + mut_fit
+
+                except:
+                    mut_pop = self.init_chromesomes(NP=1)
+                    mut_fit = self.Fit(mut_pop)
+
+                    pop.append(mut_pop)
+                    fitness = fitness + mut_fit
 
             # Selection
             print('-----Selection-----')
@@ -339,6 +362,8 @@ class ChromesomeS(object):
 
             pop = sorted_pop
             fitness = sorted_fitness
+        
+        print("-----Finally-----")
 
             
 
