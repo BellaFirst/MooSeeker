@@ -1,0 +1,10 @@
+/db/KEGG/
+/db/KEGG_caoyh/
+/dGPredictor
+/.ipynb_checkpoints
+/.vscode
+/SupMat
+/*/__pycache__
+/caoyh.py 
+/GetSBtabFile.ipynb 
+/test.csv
