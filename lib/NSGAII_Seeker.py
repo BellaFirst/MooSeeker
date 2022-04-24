@@ -4,6 +4,10 @@ import json
 import random
 # random.seed(0)
 
+# fast_non_dominatied_sort
+from pymoo.util.nds.non_dominated_sorting import NonDominatedSorting
+
+
 import os,inspect
 from sympy import field_isomorphism, multinomial_coefficients
 current_dir=os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -257,11 +261,14 @@ class NSGAII_Seeker(object):
 
         return np.random.random()
 
-
     def get_fitness(self, Chrom):
-
-        # return Chrom.chrom.length()
-        return np.random.random()
+        
+        F1 = self.func_1(Chrom)
+        F2 = self.func_2(Chrom)
+        F3 = self.func_3(Chrom)
+        F = [F1, F2, F3]
+        
+        return F
 
     def Fit(self, chromesomes):
 
@@ -306,6 +313,19 @@ class NSGAII_Seeker(object):
 
         return new_chromesomes, new_fitness
 
+    def non_dominated_sorting(self, F):
+
+        Front = NonDominatedSorting().do(F)
+
+        return Front
+
+    def cal_crowing_distance(self, F):
+
+        from pymoo.algorithms.moo.nsga2 import calc_crowding_distance
+
+        crowding = calc_crowding_distance(F=F)
+        
+        return crowding
 
     def Evolution(self):
 
