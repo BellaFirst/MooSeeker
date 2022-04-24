@@ -318,7 +318,7 @@ class ChromesomeS(object):
                     cross_pop = self.init_chromesomes(NP=2)
                     cross_fit = self.Fit(cross_pop)
 
-                    pop.append(cross_pop)
+                    pop = pop + cross_pop
                     fitness = fitness + cross_fit
 
 
