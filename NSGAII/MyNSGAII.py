@@ -40,28 +40,31 @@ class MyProblem(ElementwiseProblem):
 
         out["F"] = np.array([F1, F2, F3], dtype=float)
 
-    def func_1(self, chrom):
+    def func_1(self, Chrom):
         # length of the pathway 
-        # less is better, so get the opposite value of pathway, so more is better now
-        return chrom.chrom.length()
+        # less is better
 
-    def func_2(self, chrom):
+        return Chrom[0].chrom.length()
+
+    def func_2(self, Chrom):
         # abs of Gib
-        # More is better
+        # less is better
 
-        dGs = 0
+        dG = 0
 
-        cur = chrom.chrom._head
+        cur = Chrom[0].chrom._head
 
         while(cur!=None):
 
-            dGs = dGs + abs(cur.reaction['dG_Mean'])
+            dG = dG + cur.reaction['dG_Mean']
 
-        return - dGs
-             
-    def func_3(self, chrom):
+            cur = cur.next
+        
+        return dG / Chrom[0].chrom.length()
+       
+    def func_3(self, Chrom):
         # yelid of pathway
-        # more is better
+        # less is better
 
         return - np.random.random()
 
@@ -70,7 +73,9 @@ class MySampling(Sampling):
 
     def _do(self, problem, n_samples, **kwargs):
 
-        X = []
+        print("-----Sampling-----")
+
+        X = np.full((n_samples, 1), None, dtype=object)
 
         count = 0
 
@@ -81,9 +86,11 @@ class MySampling(Sampling):
 
             if chrom.get_a_chrom():
 
-                X.append(chrom)
+                X[count, 0] = chrom
 
                 count = count + 1
+
+        # X = np.array(X, dtype=object)
 
         return X
 
@@ -93,10 +100,12 @@ class MyCrossover(Crossover):
     def __init__(self, Pc=0.8):
 
         # define the crossover: number of parents and number of offsprings
-        super().__init__(2, 2)
+        super().__init__(6, 2)
         self.Pc = Pc
 
     def _do(self, problem, X, **kwargs):
+
+        print("-----Crossover-----")
 
         # The input of has the following shape (n_parents, n_matings, n_var)
         # _, n_matings, n_var = X.shape
@@ -136,7 +145,7 @@ class MyCrossover(Crossover):
             i, j = random.sample(range(1,len(chromesomes)), 2)
 
             if self.has_same_node(chromesomes[i], chromesomes[j]):
-                print(i, j)
+                # print(i, j)
                 return self.cross(chromesomes[i], chromesomes[j])
 
             count = count + 1
@@ -222,10 +231,12 @@ class MyCrossover(Crossover):
 class MyMutation(Mutation):
 
     def __init__(self, Pm=0.1):
-        super.__init__()
+        super().__init__()
         self.Pm = Pm
 
     def _do(self, problem, X, **kwargs):
+
+        print("-----Mutation-----")
 
         m = np.random.random()
 
@@ -329,34 +340,38 @@ class MyDuplicateElimination(ElementwiseDuplicateElimination):
 
     def is_equal(self, a, b):
 
-        return a.chrom==b.chrom
+        print("-----Elimination-----")
+
+        return a.X[0].chrom == b.X[0].chrom
 
 
 
 
-if __name__=='__main__':
+import string
+import numpy as np
 
-    algorithm = NSGA2(pop_size=6,
-                      sampling=MySampling(),
-                      crossover=MyCrossover(),
-                      mutation=MyMutation(),
-                      eliminate_duplicates=MyDuplicateElimination())
+from pymoo.algorithms.moo.nsga2 import NSGA2
+from pymoo.optimize import minimize
 
-    res = minimize(MyProblem(),
+
+algorithm = NSGA2(pop_size=6,
+                  sampling=MySampling(),
+                  crossover=MyCrossover(),
+                  mutation=MyMutation(),
+                  eliminate_duplicates=MyDuplicateElimination())
+
+file = '/home/caoyh/project/myseeker/db/KEGG_caoyh/MYPOOL/MYPOOL.npy'
+translator_file = '/home/caoyh/project/myseeker/db/KEGG_caoyh/CompDict_rn.json'
+mypool = np.load(file, allow_pickle=True).item() # 提示warning 特别慢
+abundant= ['C00001', 'C00002', 'C00003', 'C00004', 'C00005', 'C00006', 'C00007', 'C00008', 'C00009', 'C00010', 'C00080']
+
+ob_sustrate = 'C00103' #"C00022"
+ob_product = 'C00631' #"C07281"
+
+
+res = minimize(MyProblem(S=ob_sustrate, P=ob_product, abundant=abundant, pool_file=mypool, translator_file=translator_file),
                algorithm,
                ('n_gen', 10),
                seed=1,
                verbose=False)
-
-#%%
-
-#%%
-from pymoo.algorithms.moo.nsga2 import NSGA2
-
-algorithm = NSGA2(pop_size=6,
-                      sampling=MySampling(),
-                      crossover=MyCrossover(),
-                      mutation=MyMutation(),
-                      eliminate_duplicates=MyDuplicateElimination())
-
-# %%
+print(res.F)
