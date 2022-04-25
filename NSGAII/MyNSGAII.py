@@ -60,7 +60,7 @@ class MyProblem(ElementwiseProblem):
 
             cur = cur.next
         
-        return dG / Chrom[0].chrom.length()
+        return dG
        
     def func_3(self, Chrom):
         # yelid of pathway
@@ -73,7 +73,7 @@ class MySampling(Sampling):
 
     def _do(self, problem, n_samples, **kwargs):
 
-        print("-----Sampling-----")
+        # print("-----Sampling-----")
 
         X = np.full((n_samples, 1), None, dtype=object)
 
@@ -100,56 +100,31 @@ class MyCrossover(Crossover):
     def __init__(self, Pc=0.8):
 
         # define the crossover: number of parents and number of offsprings
-        super().__init__(6, 2)
+        super().__init__(2, 2)
         self.Pc = Pc
 
     def _do(self, problem, X, **kwargs):
 
-        print("-----Crossover-----")
+        # print("-----Crossover-----")
 
         # The input of has the following shape (n_parents, n_matings, n_var)
-        # _, n_matings, n_var = X.shape
+        n_parents_, n_matings, n_var = X.shape
 
-        c = np.random.random()
+        # The output owith the shape (n_offsprings, n_matings, n_var)
+        # Because there the number of parents and offsprings are equal it keeps the shape of X
+        Y = np.full_like(X, None, dtype=object)
 
-        if c < self.Pc:
+        for idx in range(n_matings):
 
-            try:
+            if self.has_same_node(X[0, idx, 0], X[1, idx, 0]):
 
-                crossA, crossB = self.MyCro(X)
+                Y[0, idx, 0], Y[1, idx, 0] = self.cross(X[0, idx, 0], X[1, idx, 0])
 
-                return[crossA, crossB]
+            else:
 
-            except:
+                Y[0, idx, 0], Y[1, idx, 0] = X[0, idx, 0], X[1, idx, 0]
 
-                crossA = AChromesome(problem.S, problem.P, problem.abundant, 
-                                problem.pool_file, problem.translator_file)
-
-                crossB = AChromesome(problem.S, problem.P, problem.abundant, 
-                                problem.pool_file, problem.translator_file)
-
-                return[crossA, crossB]
-
-        else:
-
-            return X
-
-    def MyCro(self, chromesomes):
-
-        count = 0
-
-        while(count < 100):
-
-            print(count)
-
-            i, j = random.sample(range(1,len(chromesomes)), 2)
-
-            if self.has_same_node(chromesomes[i], chromesomes[j]):
-                # print(i, j)
-                return self.cross(chromesomes[i], chromesomes[j])
-
-            count = count + 1
-
+        return Y
 
     def cross(self, chromA, chromB):
         """cross chromA and chromB
@@ -230,13 +205,13 @@ class MyCrossover(Crossover):
 
 class MyMutation(Mutation):
 
-    def __init__(self, Pm=0.1):
+    def __init__(self, Pm=1):
         super().__init__()
         self.Pm = Pm
 
     def _do(self, problem, X, **kwargs):
 
-        print("-----Mutation-----")
+        # print("-----Mutation-----")
 
         m = np.random.random()
 
@@ -250,7 +225,7 @@ class MyMutation(Mutation):
 
             except:
 
-                mut_x = AChromesome(problem.s, problem.p, problem.abundant, 
+                mut_x = AChromesome(problem.S, problem.P, problem.abundant, 
                                         problem.pool_file, problem.translator_file)
 
                 idx = np.random.randint(low=0, high=len(X))
@@ -258,6 +233,8 @@ class MyMutation(Mutation):
                 X[idx] = mut_x
                 
                 return X
+        
+        return X
 
 
     def Muta(self, chromesomes, problem):
@@ -281,11 +258,11 @@ class MyMutation(Mutation):
         chrom = copy.deepcopy(Chrome)
 
         # 确定了底物和产物 
-        m, n = random.sample(range(0, chrom.chrom.length()), 2)
+        m, n = random.sample(range(0, chrom[0].chrom.length()), 2)
 
-        cur = chrom.chrom._head
+        cur = chrom[0].chrom._head
 
-        for i in range(0, chrom.chrom.length()):
+        for i in range(0, chrom[0].chrom.length()):
             
             if i==min(m, n): 
                 s = cur.P
@@ -297,17 +274,18 @@ class MyMutation(Mutation):
                 cur = cur.next
 
         # generate mut_chrom
+        mut_chrom = np.full((1, 1), None, dtype=object)
         while(1):
 
-            mut_chrom = AChromesome(s, p, problem.abundant, problem.pool_file, problem.translator_file) 
+            temp_chrom = AChromesome(s, p, problem.abundant, problem.pool_file, problem.translator_file) 
 
-            if mut_chrom.get_a_chrom(): 
-                # mut_chrom.chrom.travel()
+            if temp_chrom.get_a_chrom(): 
+                mut_chrom[0] = temp_chrom
                 break
 
         # connect chrom and mut_chrom
-        cur = chrom.chrom._head 
-        mut_cur = mut_chrom.chrom._head
+        cur = chrom[0].chrom._head 
+        mut_cur = mut_chrom[0][0].chrom._head
 
         for i in range(1, max(m,n)+1):
             
@@ -320,11 +298,11 @@ class MyMutation(Mutation):
                     if mut_cur.next==None:
                         mut_cur.next = temp
                         # trim new chrom
-                        chrom.trim_chrom()
+                        chrom[0].trim_chrom()
                         # update chrom's sink
-                        chrom.update_sink_after_crossover_mutation()
+                        chrom[0].update_sink_after_crossover_mutation()
 
-                        if chrom.chrom != Chrome.chrom:
+                        if chrom[0].chrom != Chrome[0].chrom:
                             return [True, chrom]
                         
                         else:
@@ -339,8 +317,6 @@ class MyMutation(Mutation):
 class MyDuplicateElimination(ElementwiseDuplicateElimination):
 
     def is_equal(self, a, b):
-
-        print("-----Elimination-----")
 
         return a.X[0].chrom == b.X[0].chrom
 
@@ -373,5 +349,5 @@ res = minimize(MyProblem(S=ob_sustrate, P=ob_product, abundant=abundant, pool_fi
                algorithm,
                ('n_gen', 10),
                seed=1,
-               verbose=False)
+               verbose=True)
 print(res.F)
