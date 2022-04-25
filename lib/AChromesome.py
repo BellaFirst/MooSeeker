@@ -15,7 +15,6 @@ class AChromesome(object):
     def __init__(self, ob_sustrate, ob_product, abundant, PoolFile, translator_file,
                 NrMax=30, 
                 StrictInitialization=False):
-                
 
         self.ob_sustrate = ob_sustrate
         self.ob_product = ob_product
@@ -232,7 +231,8 @@ class AChromesome(object):
                 cur = cur.next                
 
         except:
-            print(self.chrom.travel())
+            # print(self.chrom.travel())
+            pass
             
         self.trim_sink
 

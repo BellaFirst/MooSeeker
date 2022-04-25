@@ -1,5 +1,5 @@
 from NSGAII import MyCrossover,MyMutation, MyProblem, MySampling, MyDuplicateElimination
-from lib import SingleReaction, SingleLinkList
+from lib.SingleNode import SingleReaction, SingleLinkList
 
 import string
 import numpy as np
@@ -13,6 +13,8 @@ algorithm = NSGA2(pop_size=6,
                   crossover=MyCrossover(),
                   mutation=MyMutation(),
                   eliminate_duplicates=MyDuplicateElimination())
+
+
 
 file = '/home/caoyh/project/myseeker/db/KEGG_caoyh/MYPOOL/MYPOOL.npy'
 translator_file = '/home/caoyh/project/myseeker/db/KEGG_caoyh/CompDict_rn.json'
